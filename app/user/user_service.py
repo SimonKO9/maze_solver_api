@@ -6,7 +6,7 @@ from app.user.models import User
 Credentials = User
 
 
-class UserService():
+class UserService:
     users: dict[str, User]
     auth: dict[str, str]
 

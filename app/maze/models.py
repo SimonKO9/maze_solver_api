@@ -1,11 +1,17 @@
 import typing
 import typing as t
+from enum import Enum
 
 from pydantic import BaseModel, root_validator, constr, conlist
 
 Coords = typing.Tuple[int, int]
 GridSize = typing.Tuple[int, int]
 Path = typing.List[Coords]
+
+
+class Steps(Enum):
+    min = "min"
+    max = "max"
 
 
 def parse_coords(coords: str) -> t.Tuple[int, int]:
@@ -24,7 +30,7 @@ class CreateMazePayload(BaseModel):
     gridSize: constr(regex=r'[1-9][0-9]*x[1-9][0-9]*')
     walls: conlist(constr(regex=r'^[A-Z][0-9]+$'))
 
-    @root_validator()
+    @root_validator(skip_on_failure=True)
     @classmethod
     def check_entrance_within_bounds(cls, values):
         entrance_coords = parse_coords(values['entrance'])
@@ -33,7 +39,7 @@ class CreateMazePayload(BaseModel):
             raise ValueError(f"Entrance is not within bounds.")
         return values
 
-    @root_validator()
+    @root_validator(skip_on_failure=True)
     @classmethod
     def check_walls_within_bounds(cls, values):
         grid = parse_grid_size(values['gridSize'])
@@ -55,4 +61,3 @@ class CreateMazePayload(BaseModel):
 
 class Maze(CreateMazePayload):
     id: str
-
