@@ -1,12 +1,12 @@
-from fastapi import FastAPI, HTTPException, Depends
+from fastapi import FastAPI, Depends
+from fastapi.security import APIKeyHeader
 from starlette.responses import JSONResponse
 
 from app.maze.maze_service import MazeService, MazeNotFoundException
 from app.maze.maze_solver import MazeException
-from app.maze.models import Maze, CreateMazePayload, Steps
-from app.user.user_service import UserService, Credentials, AuthException
+from app.maze.models import CreateMazePayload, Steps
 from app.user.models import User
-from fastapi.security import APIKeyHeader
+from app.user.user_service import UserService, Credentials, AuthException, UserAlreadyExistsException
 
 app = FastAPI()
 auth = APIKeyHeader(name="X-Token")
@@ -25,11 +25,9 @@ def get_maze_service():
     return deps['mazes']
 
 
-def get_user(token: str = Depends(auth), user_service=Depends(get_user_service)):
-    try:
-        return user_service.get_user_for_token_or_throw(token)
-    except Exception as e:
-        raise HTTPException(403, str(e))
+def get_user(token: str = Depends(auth),
+             user_service=Depends(get_user_service)):
+    return user_service.get_user_for_token_or_throw(token)
 
 
 @app.get("/")
@@ -39,20 +37,14 @@ async def root():
 
 @app.post("/user")
 async def register(user: User, user_service=Depends(get_user_service)):
-    try:
-        user_service.register(user)
-        return {'username': user.username}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    user_service.register(user)
+    return {'username': user.username}
 
 
 @app.post("/login")
 async def login(credentials: Credentials, user_service=Depends(get_user_service)):
-    try:
-        token = user_service.login(credentials)
-        return {'token': token}
-    except Exception as e:
-        raise HTTPException(401, str(e))
+    token = user_service.login(credentials)
+    return {'token': token}
 
 
 @app.get("/maze")
@@ -77,15 +69,15 @@ def get_solution(maze_id: str,
 
 
 @app.exception_handler(MazeException)
-def maze_exception_handler(req, e: MazeException):
+def maze_exception_handler(req, exc: MazeException):  # pylint: disable=unused-argument
     return JSONResponse(
         status_code=500,
-        content={'message': e.message}
+        content={'message': exc.message}
     )
 
 
 @app.exception_handler(MazeNotFoundException)
-def maze_not_found_exception_handler(req, e):
+def maze_not_found_exception_handler(req, exc):  # pylint: disable=unused-argument
     return JSONResponse(
         status_code=404,
         content={'message': "Maze not found."}
@@ -93,8 +85,16 @@ def maze_not_found_exception_handler(req, e):
 
 
 @app.exception_handler(AuthException)
-def auth_exception_handler(req, e: AuthException):
+def auth_exception_handler(req, exc: AuthException):  # pylint: disable=unused-argument
     return JSONResponse(
         status_code=403,
-        content={'message': e.message}
+        content={'message': exc.message}
+    )
+
+
+@app.exception_handler(UserAlreadyExistsException)
+def user_already_exists_exception_handler(req, exc: UserAlreadyExistsException):  # pylint: disable=unused-argument
+    return JSONResponse(
+        status_code=400,
+        content={'message': 'User already exists.'}
     )

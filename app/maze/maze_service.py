@@ -1,8 +1,9 @@
-from app.maze.maze_solver import MazeSolver
-from app.maze.models import CreateMazePayload, Steps
-from uuid import uuid4
-from app.maze.utils import *
 import typing as t
+from uuid import uuid4
+
+from app.maze.maze_solver import MazeSolver
+from app.maze.models import CreateMazePayload, Steps, Maze, Path
+from app.maze.utils import print_coords
 
 
 class MazeNotFoundException(Exception):
@@ -20,7 +21,8 @@ class MazeService:
         self._mazes = {}
 
     def create_maze(self, payload: CreateMazePayload, owner: str) -> Maze:
-        maze = Maze(entrance=payload.entrance, gridSize=payload.gridSize, walls=payload.walls, id=str(uuid4()))
+        maze = Maze(entrance=payload.entrance, gridSize=payload.gridSize,
+                    walls=payload.walls, id=str(uuid4()))
         if owner in self._mazes:
             self._mazes[owner].append(maze)
         else:
@@ -28,28 +30,28 @@ class MazeService:
         return maze
 
     def get_maze(self, owner: str, maze_id: str) -> t.Optional[Maze]:
-        return next((maze for maze in self.get_mazes(owner) if maze.id == maze_id), None)
+        return next((maze for maze in self.get_mazes(
+            owner) if maze.id == maze_id), None)
 
     def get_mazes(self, owner: str) -> t.List[Maze]:
         if owner in self._mazes:
             return self._mazes[owner]
-        else:
-            return []
+        return []
 
-    def get_maze_solution(self, owner: str, maze_id: str, steps: Steps) -> t.Optional[Path]:
+    def get_maze_solution(self, owner: str, maze_id: str,
+                          steps: Steps) -> t.Optional[Path]:
         maze = self.get_maze(owner, maze_id)
         if maze is None:
             raise MazeNotFoundException()
         solver = MazeSolver(maze)
 
-        if steps == Steps.min:
+        if steps == Steps.MIN:
             path = solver.get_shortest_path()
-        elif steps == Steps.max:
+        elif steps == Steps.MAX:
             path = solver.get_longest_path()
         else:
             raise NotImplementedError("Steps must be either min or max")
 
         if path is not None:
             return [print_coords(x) for x in path]
-        else:
-            raise MazeWithoutSolutionException()
+        raise MazeWithoutSolutionException()

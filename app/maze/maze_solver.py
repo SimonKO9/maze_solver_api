@@ -1,10 +1,12 @@
-from app.maze.models import *
-from app.maze.utils import *
 import typing as t
+
+from app.maze.models import parse_grid_size, Maze, parse_coords, Path, Coords
+from app.maze.utils import maze_to_matrix, print_coords
 
 
 class MazeException(Exception):
     def __init__(self, message):
+        super().__init__()
         self.message = message
 
 
@@ -23,27 +25,28 @@ class MazeSolver:
     def _solve(self):
         paths = []
 
-        def dfs(v, visited):
-            visited.append(v)
-            for neighbour in self._get_neighbours(v):
+        def dfs(vertex, visited):
+            visited.append(vertex)
+            for neighbour in self._get_neighbours(vertex):
                 if neighbour not in visited:
                     dfs(neighbour, visited.copy())
 
-            if v[1] == self._height - 1:  # append path if leads to exit (exit located at bottom row)
+            # append path if leads to exit (exit located at bottom row)
+            if vertex[1] == self._height - 1:
                 paths.append(visited)
 
         dfs(self._entrance, [])
 
-        exits = set([c[-1] for c in paths])
+        exits = [c[-1] for c in paths]
+        exits = set(exits)
         if len(exits) > 1:
-            exits_pretty = [print_coords(e) for e in exits]
-            exits_pretty.sort()
+            exits_pretty = sorted([print_coords(e) for e in exits])
             print_exits = ", ".join(exits_pretty)
             raise MazeException(f"Multiple exits detected: {print_exits}.")
         if len(exits) == 0:
             raise MazeException("No exit found.")
 
-        paths.sort(key=lambda x: len(x))
+        paths.sort(key=len)
         self._paths = paths
 
     def get_paths(self):
@@ -52,17 +55,12 @@ class MazeSolver:
     def get_shortest_path(self) -> t.Optional[Path]:
         if len(self._paths) > 0:
             return self._paths[0]
-        else:
-            return None
+        return None
 
     def get_longest_path(self) -> t.Optional[Path]:
         if len(self._paths) > 0:
             return self._paths[-1]
-        else:
-            return None
-
-    def _get_exits(self) -> t.List[Coords]:
-        return
+        return None
 
     def _get_neighbours(self, node: Coords) -> t.List[Coords]:
         candidates = [
@@ -73,6 +71,7 @@ class MazeSolver:
         ]
         return [
             c for c in candidates
-            if 0 <= c[0] < self._width and 0 <= c[1] < self._height  # within bounds
+            # within bounds
+            if 0 <= c[0] < self._width and 0 <= c[1] < self._height
                and self._matrix[c[1]][c[0]] == "0"  # and is not wall
         ]

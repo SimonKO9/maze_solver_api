@@ -1,8 +1,7 @@
-from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
-import json
-from app.main import app, get_user_service, get_user
-from app.user.user_service import UserService
+from fastapi.testclient import TestClient
+
+from app.main import app, get_user
 
 client = TestClient(app)
 

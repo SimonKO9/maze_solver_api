@@ -1,5 +1,3 @@
-import typing as t
-
 from app.maze.models import parse_grid_size, Maze, parse_coords, Coords, Path
 
 
@@ -19,9 +17,9 @@ def print_maze(maze: Maze) -> str:
 
 
 def print_coords(coords: Coords) -> str:
-    x = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[coords[0]]
-    y = coords[1] + 1
-    return f"{x}{y}"
+    x_coord = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[coords[0]]
+    y_coord = coords[1] + 1
+    return f"{x_coord}{y_coord}"
 
 
 def print_path(path: Path) -> str:

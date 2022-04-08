@@ -2,7 +2,7 @@ import pytest
 
 from app.maze.maze_solver import MazeSolver, MazeException
 from app.maze.models import Maze
-from app.maze.utils import print_coords, print_maze
+from app.maze.utils import print_coords
 
 
 def test_should_find_path__when_single_path_exists():

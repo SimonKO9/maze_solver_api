@@ -1,23 +1,22 @@
-import typing
 import typing as t
 from enum import Enum
 
-from pydantic import BaseModel, root_validator, constr, conlist
+from pydantic import BaseModel, root_validator, constr, conlist  # pylint: disable=no-name-in-module
 
-Coords = typing.Tuple[int, int]
-GridSize = typing.Tuple[int, int]
-Path = typing.List[Coords]
+Coords = t.Tuple[int, int]
+GridSize = t.Tuple[int, int]
+Path = t.List[Coords]
 
 
 class Steps(Enum):
-    min = "min"
-    max = "max"
+    MIN = "min"
+    MAX = "max"
 
 
 def parse_coords(coords: str) -> t.Tuple[int, int]:
-    x = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.index(coords[0])
-    y = int(coords[1]) - 1
-    return x, y
+    x_coord = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.index(coords[0])
+    y_coord = int(coords[1]) - 1
+    return x_coord, y_coord
 
 
 def parse_grid_size(grid_size: str) -> t.Tuple[int, int]:
@@ -36,7 +35,7 @@ class CreateMazePayload(BaseModel):
         entrance_coords = parse_coords(values['entrance'])
         grid = parse_grid_size(values['gridSize'])
         if entrance_coords[0] >= grid[0] or entrance_coords[1] >= grid[1]:
-            raise ValueError(f"Entrance is not within bounds.")
+            raise ValueError("Entrance is not within bounds.")
         return values
 
     @root_validator(skip_on_failure=True)
@@ -55,7 +54,7 @@ class CreateMazePayload(BaseModel):
         entrance = values['entrance']
         walls = values['walls']
         if entrance in walls:
-            raise ValueError(f"Entrance can't be where wall is.")
+            raise ValueError("Entrance can't be where wall is.")
         return values
 
 

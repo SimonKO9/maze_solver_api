@@ -1,6 +1,7 @@
-from fastapi import Depends, FastAPI
-from fastapi.testclient import TestClient
 import json
+
+from fastapi.testclient import TestClient
+
 from app.main import app, get_user_service
 from app.user.user_service import UserService
 
@@ -28,14 +29,14 @@ def test_return_400_if_user_already_exists():
     }
     resp = client.post('/user', json.dumps({'username': 'testuser', 'password': 'passw0rd'}))
     assert resp.status_code == 400
-    assert resp.json() == {'detail': 'User already exists.'}
+    assert resp.json() == {'message': 'User already exists.'}
 
 
-def test_login_if_credentials_dont_match__should_return_401():
+def test_login_if_credentials_dont_match__should_return_403():
     app.dependency_overrides[get_user_service] = lambda: UserService()
     resp = client.post('/login', json.dumps({'username': 'testuser', 'password': 'passw0rd'}))
-    assert resp.status_code == 401
-    assert resp.json() == {'detail': 'Invalid credentials.'}
+    assert resp.status_code == 403
+    assert resp.json() == {'message': 'Invalid credentials.'}
 
 
 def test_login_if_credentials_dont_match__should_return_200_and_token():
