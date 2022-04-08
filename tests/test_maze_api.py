@@ -191,3 +191,21 @@ def test_create_maze_is_auth_protected():
 
     resp = client.post('/maze', headers={"X-Token": 'invalid'})
     assert resp.status_code == 403
+
+
+def test_get_mazes_is_auth_protected():
+    app.dependency_overrides = {}
+    resp = client.get('/maze')
+    assert resp.status_code == 403
+
+    resp = client.get('/maze', headers={"X-Token": 'invalid'})
+    assert resp.status_code == 403
+
+
+def test_get_maze_solution_is_auth_protected():
+    app.dependency_overrides = {}
+    resp = client.get('/maze/123/solution?steps=min')
+    assert resp.status_code == 403
+
+    resp = client.get('/maze/123/solution?steps=min', headers={"X-Token": 'invalid'})
+    assert resp.status_code == 403
