@@ -6,6 +6,11 @@ from app.user.models import User
 Credentials = User
 
 
+class AuthException(Exception):
+    def __init__(self, message):
+        self.message = message
+
+
 class UserService:
     users: dict[str, User]
     auth: dict[str, str]
@@ -27,10 +32,10 @@ class UserService:
             self.auth[token] = credentials.username
             return token
         else:
-            raise Exception("Invalid credentials.")
+            raise AuthException("Invalid credentials.")
 
     def get_user_for_token_or_throw(self, token: str) -> str:
         if token in self.auth:
             return self.auth[token]
         else:
-            raise Exception("Invalid token.")
+            raise AuthException("Invalid token.")

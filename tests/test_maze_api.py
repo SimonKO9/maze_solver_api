@@ -117,7 +117,7 @@ def test_get_solution_for_maze_without_one_should_return_500():
 
     resp = client.get(f'/maze/{id}/solution?steps=min')
     assert resp.status_code == 500
-    assert resp.json() == {'detail': 'No exit found.'}
+    assert resp.json() == {'message': 'No exit found.'}
 
 
 def test_get_solution_for_maze_with_multiple_exits_should_return_500():
@@ -131,4 +131,64 @@ def test_get_solution_for_maze_with_multiple_exits_should_return_500():
 
     resp = client.get(f'/maze/{id}/solution?steps=min')
     assert resp.status_code == 500
-    assert resp.json() == {'detail': 'Multiple exits detected: A4, B4, C4, D4.'}
+    assert resp.json() == {'message': 'Multiple exits detected: A4, B4, C4, D4.'}
+
+
+def test_get_mazes_should_return_only_my_mazes():
+    app.dependency_overrides[get_user] = lambda: 'user1'
+    payload = {
+        "entrance": "A1",
+        "gridSize": "4x4",
+        "walls": [],
+    }
+    resp = client.post('/maze', json=payload)
+    user1_maze1 = resp.json()['id']
+    resp = client.post('/maze', json=payload)
+    user1_maze2 = resp.json()['id']
+
+    resp = client.get('/maze')
+    user1_mazes = resp.json()
+    assert {user1_maze1, user1_maze2} == set([maze['id'] for maze in user1_mazes])
+
+    app.dependency_overrides[get_user] = lambda: 'user2'
+
+    resp = client.post('/maze', json=payload)
+    user2_maze1 = resp.json()['id']
+    resp = client.post('/maze', json=payload)
+    user2_maze2 = resp.json()['id']
+
+    resp = client.get('/maze')
+    user2_mazes = resp.json()
+
+    assert {user2_maze1, user2_maze2} == set([maze['id'] for maze in user2_mazes])
+    assert {user1_maze1, user1_maze2} != {user2_maze1, user2_maze2}
+
+
+def test_return_404_if_maze_does_not_exist():
+    app.dependency_overrides[get_user] = lambda: 'user1'
+    resp = client.get(f'/maze/idontexist/solution?steps=min')
+    assert resp.status_code == 404
+
+
+def test_user_cant_retrieve_someone_elses_maze():
+    app.dependency_overrides[get_user] = lambda: 'user1'
+    payload = {
+        "entrance": "A1",
+        "gridSize": "4x4",
+        "walls": [],
+    }
+    resp = client.post('/maze', json=payload)
+    user1_maze1 = resp.json()['id']
+
+    app.dependency_overrides[get_user] = lambda: 'user2'
+    resp = client.get(f'/maze/{user1_maze1}/solution?steps=min')
+    assert resp.status_code == 404
+
+
+def test_create_maze_is_auth_protected():
+    app.dependency_overrides = {}
+    resp = client.post('/maze')
+    assert resp.status_code == 403
+
+    resp = client.post('/maze', headers={"X-Token": 'invalid'})
+    assert resp.status_code == 403

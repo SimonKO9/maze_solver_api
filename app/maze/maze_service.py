@@ -8,8 +8,10 @@ import typing as t
 class MazeNotFoundException(Exception):
     pass
 
+
 class MazeWithoutSolutionException(Exception):
     pass
+
 
 class MazeService:
     _mazes: t.Dict[str, list[Maze]]
@@ -26,20 +28,13 @@ class MazeService:
         return maze
 
     def get_maze(self, owner: str, maze_id: str) -> t.Optional[Maze]:
-        return next(maze for maze in self.get_mazes(owner) if maze.id == maze_id)
+        return next((maze for maze in self.get_mazes(owner) if maze.id == maze_id), None)
 
     def get_mazes(self, owner: str) -> t.List[Maze]:
         if owner in self._mazes:
             return self._mazes[owner]
         else:
             return []
-
-    def print_maze(self, owner: str, maze_id: str) -> t.Optional[str]:
-        maze = self.get_maze(owner, maze_id)
-        if maze is not None:
-            print_maze(maze)
-        else:
-            return None
 
     def get_maze_solution(self, owner: str, maze_id: str, steps: Steps) -> t.Optional[Path]:
         maze = self.get_maze(owner, maze_id)

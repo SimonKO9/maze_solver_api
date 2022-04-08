@@ -49,3 +49,17 @@ def test_should_throw__when_multiple_exits_exist():
         MazeSolver(maze)
 
     assert e.value.message == "Multiple exits detected: C8, D8, E8, F8, G8, H8."
+
+
+def test_should_throw__when_multiple_exits_exist_empty_maze():
+    maze = Maze(
+        entrance="A1",
+        gridSize="4x4",
+        walls=[],
+        id="test"
+    )
+
+    with pytest.raises(MazeException) as e:
+        MazeSolver(maze)
+
+    assert e.value.message == "Multiple exits detected: A4, B4, C4, D4."
