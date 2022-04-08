@@ -4,6 +4,8 @@ from uuid import uuid4
 from app.maze.maze_solver import MazeSolver
 from app.maze.models import CreateMazePayload, Steps, Maze, Path
 from app.maze.utils import print_coords
+from app.persistence import schemas
+from app.persistence.persistence import Persistence
 
 
 class MazeNotFoundException(Exception):
@@ -15,18 +17,14 @@ class MazeWithoutSolutionException(Exception):
 
 
 class MazeService:
-    _mazes: t.Dict[str, list[Maze]]
-
-    def __init__(self) -> None:
-        self._mazes = {}
+    def __init__(self, persistence: Persistence) -> None:
+        self._persistence = persistence
 
     def create_maze(self, payload: CreateMazePayload, owner: str) -> Maze:
         maze = Maze(entrance=payload.entrance, gridSize=payload.gridSize,
                     walls=payload.walls, id=str(uuid4()))
-        if owner in self._mazes:
-            self._mazes[owner].append(maze)
-        else:
-            self._mazes[owner] = [maze]
+        self._persistence.create_maze(
+            schemas.Maze(id=maze.id, entrance=maze.entrance, gridSize=maze.gridSize, walls=maze.walls), owner)
         return maze
 
     def get_maze(self, owner: str, maze_id: str) -> t.Optional[Maze]:
@@ -34,12 +32,10 @@ class MazeService:
             owner) if maze.id == maze_id), None)
 
     def get_mazes(self, owner: str) -> t.List[Maze]:
-        if owner in self._mazes:
-            return self._mazes[owner]
-        return []
+        return self._persistence.get_mazes_by_username(owner)
 
     def get_maze_solution(self, owner: str, maze_id: str,
-                          steps: Steps) -> t.Optional[Path]:
+                          steps: Steps) -> t.Optional[t.List[str]]:
         maze = self.get_maze(owner, maze_id)
         if maze is None:
             raise MazeNotFoundException()

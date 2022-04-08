@@ -1,11 +1,14 @@
 from fastapi.testclient import TestClient
 from fastapi.testclient import TestClient
 
-from app.main import app, get_user
+from app.main import app, get_user, get_persistence
+from app.persistence.persistence import InMemoryPersistence
 
 client = TestClient(app)
 
 app.dependency_overrides[get_user] = lambda: 'test1'
+persistence = InMemoryPersistence()
+app.dependency_overrides[get_persistence] = lambda: persistence
 
 
 def test_create_maze_should_succeed_for_valid_maze():
@@ -185,7 +188,7 @@ def test_user_cant_retrieve_someone_elses_maze():
 
 
 def test_create_maze_is_auth_protected():
-    app.dependency_overrides = {}
+    del app.dependency_overrides[get_user]
     resp = client.post('/maze')
     assert resp.status_code == 403
 
@@ -194,7 +197,6 @@ def test_create_maze_is_auth_protected():
 
 
 def test_get_mazes_is_auth_protected():
-    app.dependency_overrides = {}
     resp = client.get('/maze')
     assert resp.status_code == 403
 
@@ -203,7 +205,6 @@ def test_get_mazes_is_auth_protected():
 
 
 def test_get_maze_solution_is_auth_protected():
-    app.dependency_overrides = {}
     resp = client.get('/maze/123/solution?steps=min')
     assert resp.status_code == 403
 

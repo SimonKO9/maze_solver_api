@@ -1,3 +1,5 @@
+import os
+
 from fastapi import FastAPI, Depends
 from fastapi.security import APIKeyHeader
 from starlette.responses import JSONResponse
@@ -7,22 +9,25 @@ from app.maze.maze_solver import MazeException
 from app.maze.models import CreateMazePayload, Steps
 from app.user.models import User
 from app.user.user_service import UserService, Credentials, AuthException, UserAlreadyExistsException
+from .database import SessionLocal, engine
+from sqlalchemy.orm import Session
+
+from .persistence.persistence import Persistence, SqlAlchemyPersistence
 
 app = FastAPI()
 auth = APIKeyHeader(name="X-Token")
 
-deps = {
-    'users': UserService(),
-    'mazes': MazeService()
-}
+
+def get_persistence():
+    return SqlAlchemyPersistence(SessionLocal)
 
 
-def get_user_service():
-    return deps['users']
+def get_user_service(persistence=Depends(get_persistence)):
+    return UserService(persistence, os.getenv('PASSWORD_SALT', '1234567890'))
 
 
-def get_maze_service():
-    return deps['mazes']
+def get_maze_service(persistence=Depends(get_persistence)):
+    return MazeService(persistence)
 
 
 def get_user(token: str = Depends(auth),
